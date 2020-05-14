@@ -35,10 +35,18 @@ if [ $ret -gt 0 ]; then
   # shellcheck disable=SC2162
   IFS=',' read -a zpools <<<"${response}"
   for pool in "${zpools[@]}"; do
-    import_pool "${pool}"
-    ret=$?
-    if [ $ret -eq 0 ]; then
-      import_success=1
+    skip=0
+    if [ ${#skippable_pools[@]} -gt 0 ]; then
+      for _skip_pool in "${skippable_pools[@]}"; do
+        if [ "${pool}" == "${_skip_pool}" ]; then
+          skip=1
+        fi
+      done
+    fi
+    if [ $skip -eq 0 ]; then
+      if import_pool "${pool}"; then
+        import_success=1
+      fi
     fi
   done
   if [ $import_success -ne 1 ]; then
@@ -60,7 +68,7 @@ else
   pool="${root}"
 fi
 
-# Attempt to find the bootfs property 
+# Attempt to find the bootfs property
 # shellcheck disable=SC2086
 datasets="$( zpool list -H -o bootfs ${pool} )"
 while read -r line; do
@@ -128,7 +136,7 @@ if [[ -n "${BOOTFS}" ]]; then
     # Make sure we bypass the other fastboot check
     i=1
   fi
-  
+
   # Boot up if we timed out, or if the enter key was pressed
   if [[ ${fast_boot} -eq 1 || $i -eq 0 ]]; then
     if ! key_wrapper "${BOOTFS}" ; then
@@ -175,7 +183,7 @@ while true; do
   if [ ${BE_SELECTED} -eq 0 ]; then
     bootenv="$( draw_be "${BASE}/env" )"
     ret=$?
-    
+
     # key press
     # bootenv
     # shellcheck disable=SC2162
@@ -197,7 +205,7 @@ while true; do
         ret=$?
 
         if [ $ret -eq 130 ]; then
-          BE_SELECTED=0 
+          BE_SELECTED=0
         elif [ $ret -eq 0 ] ; then
           kexec_kernel "${selected_kernel}"
           exit
@@ -212,10 +220,10 @@ while true; do
         ret=$?
 
         if [ $ret -eq 130 ]; then
-          BE_SELECTED=0 
+          BE_SELECTED=0
         elif [ $ret -eq 0 ] ; then
           clone_snapshot "${selected_snap}"
-          BE_SELECTED=0 
+          BE_SELECTED=0
         fi
         ;;
       "alt-a")
@@ -223,10 +231,10 @@ while true; do
         ret=$?
 
         if [ $ret -eq 130 ]; then
-          BE_SELECTED=0 
+          BE_SELECTED=0
         elif [ $ret -eq 0 ] ; then
           clone_snapshot "${selected_snap}"
-          BE_SELECTED=0 
+          BE_SELECTED=0
         fi
         ;;
       "alt-r")

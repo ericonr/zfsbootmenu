@@ -44,6 +44,13 @@ if getargbool 1 die_on_import_failure ; then
   info "ZFSBootMenu: Disabling die on import failure"
 fi
 
+# Get a list of pools to not import on boot
+skip_pools=$( getarg skip_pools=)
+if [ -n "${skip_pools}" ] ; then
+  info "ZFSBootMenu: Setting ${skip_pools} as skippable pools"
+  IFS=',' read -a skippable_pools <<<"${skip_pools}"
+fi
+
 wait_for_zfs=0
 case "${root}" in
   ""|zfsbootmenu|zfsbootmenu:)
